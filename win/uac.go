@@ -8,8 +8,8 @@ import (
 	"syscall"
 )
 
-const (
-	UAC_ERROR_EXIT = "exit current process"
+var (
+	UAC_ERROR_EXIT = errors.New("exit current process")
 )
 
 //Request UAC elevation in Go,要求以管理员身份运行程序
@@ -34,7 +34,7 @@ func RequireUAC() error {
 			return err
 		}
 
-		return errors.New(UAC_ERROR_EXIT)
+		return UAC_ERROR_EXIT
 	}
 	return nil
 }
