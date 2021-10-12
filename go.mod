@@ -1,4 +1,4 @@
-module github.com/qwenode/gogo
+module github.com/qwenode/gogo-windows
 
 go 1.16
 
