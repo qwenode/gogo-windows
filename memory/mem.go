@@ -6,7 +6,7 @@ import (
 	"github.com/0xrawsec/golang-win32/win32/kernel32"
 	"golang.org/x/text/encoding/unicode"
 	"golang.org/x/text/transform"
-	"io/ioutil"
+	"io"
 )
 
 type ProcessInfo struct {
@@ -42,6 +42,6 @@ func DecodeWindowString(b []byte) string {
 	utf16 := unicode.UTF16(unicode.LittleEndian, unicode.IgnoreBOM)
 	decoder := utf16.NewDecoder()
 	reader := transform.NewReader(bytes.NewReader(b), unicode.BOMOverride(decoder))
-	all, _ := ioutil.ReadAll(reader)
+	all, _ := io.ReadAll(reader)
 	return string(all)
 }

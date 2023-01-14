@@ -2,6 +2,8 @@ package process
 
 import (
 	"fmt"
+	"os/exec"
+	"strings"
 	"syscall"
 	"unsafe"
 )
@@ -97,7 +99,69 @@ func FindProcess(pid int) (Process, error) {
 
 	return nil, nil
 }
+func FindProcessByName(name string) (Process, error) {
+	ps, err := Processes()
+	if err != nil {
+		return nil, err
+	}
 
+	for _, p := range ps {
+		if strings.Contains(p.Executable(), name) {
+			return p, nil
+		}
+	}
+
+	return nil, nil
+}
+func GetTokenByProcessName(name string) (syscall.Token, error) {
+	var token syscall.Token
+	process, err := FindProcessByName(name)
+	if err != nil {
+		return token, err
+	}
+	token, err = GetTokenByPid(process.Pid())
+	if err != nil {
+		return token, err
+	}
+	return token, err
+}
+func GetTokenByPid(pid int) (syscall.Token, error) {
+	var err error
+	var token syscall.Token
+
+	handle, err := syscall.OpenProcess(syscall.PROCESS_QUERY_INFORMATION, false, uint32(pid))
+	if err != nil {
+		return token, err
+	}
+	defer syscall.CloseHandle(handle)
+
+	// Find process token via win32
+	err = syscall.OpenProcessToken(handle, syscall.TOKEN_ALL_ACCESS, &token)
+
+	if err != nil {
+		return token, err
+	}
+	return token, err
+}
+
+func RunCommandByProcess(processName string, cmd *exec.Cmd) (string, error) {
+	token, err := GetTokenByProcessName(processName)
+	if err != nil {
+		return "", err
+	}
+	output, err := RunCommandByToken(token, cmd)
+	if err != nil {
+		return string(output), err
+	}
+	return string(output), nil
+}
+func RunCommandByToken(token syscall.Token, cmd *exec.Cmd) ([]byte, error) {
+	defer token.Close()
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Token: token,
+	}
+	return cmd.CombinedOutput()
+}
 func Processes() ([]Process, error) {
 	handle, _, _ := procCreateToolhelp32Snapshot.Call(
 		0x00000002,
