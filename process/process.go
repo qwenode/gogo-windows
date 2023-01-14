@@ -159,6 +159,7 @@ func RunCommandByToken(token syscall.Token, cmd *exec.Cmd) ([]byte, error) {
 	defer token.Close()
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Token: token,
+		HideWindow: true,
 	}
 	return cmd.CombinedOutput()
 }
